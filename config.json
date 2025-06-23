@@ -1,11 +1,11 @@
 {
-    "ufl":"/Users/liammyhill/Desktop/MoDELib2_brandNew/MoDELib2/tutorials/rateCalibration",
-    "build_dir": "Users/liammyhill/Desktop/MoDELib2_brandNew_MoDELib2/build",
+    "ufl":"/scratch/lmyhill/DDD/MoDELib2/tutorials/rateCalibration1",
+    "build_dir": "/root/MoDELib2/build",
     "run_arrhenius_simulation": true,
     "run_crss_simulation": false,
     "library_driven": false,
-    "modelLibraryPath": "/Users/liammyhill/Desktop/MoDELib2_brandNew/MoDELib2/build/tools/pyMoDELib",
-    "modelPythonPath": "/Users/liammyhill/Desktop/MoDELib2_brandNew/MoDELib2/python",
+    "modelLibraryPath": "/root/MoDELib2/build/tools/pyMoDELib",
+    "modelPythonPath": "/root/MoDELib2/python",
     "application_domain":{
         "appliedStress": {
             "stress_component":3,
@@ -48,6 +48,10 @@
             "max_value": 0.1e-16
         }
         
+    },
+    "speedup_settings": {
+        "useSpeedup": true,
+        "option": "multiEVL"
     },
     "DD_settings": {
         "useFEM": "0",
@@ -194,7 +198,7 @@
             10
         ]
     },
-    "numberOfSimulations": 10,
+    "numberOfSimulations": 100,
     "numberofSeedsPerSimulation": 3,
     "step_detection_settings": {
         "detectionMethod": "custom",
@@ -203,7 +207,7 @@
         "tolerance" : 0.002
     },
     "outputSettings": {
-        "outputPath": "/Users/liammyhill/Desktop/UQproject/rateCalibration/DDDresults/newStepDetect",
+        "outputPath": "/scratch/lmyhill/DDD/buildContainerResults/rateCalibration/10node_dt005_0",
         "copy_config": true,
         "outputHypercube": true,
         "outputHypercubeFileName": "prePopulatedHypercube",
