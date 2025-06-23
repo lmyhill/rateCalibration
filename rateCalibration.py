@@ -686,6 +686,8 @@ def main():
     library_driven = config.get("library_driven", True)
     
     step_detection_settings = config.get("step_detection_settings", {})
+
+    speedup_settings = config.get("speedup_settings", {})
     
     build_dir = config.get("build_dir", False)
 
@@ -776,7 +778,7 @@ def main():
 
         print(f"Latin Hypercube saved to {output_hypercube_file_path}")
     
-    if run_simulation:
+    if run_simulation and not speedup_settings.get("useSpeedup", False):
         
         #create an id
         id_tag = 0
@@ -976,7 +978,36 @@ def main():
 
         print(f"Simulation results saved to {results_file_path}")
         
-        
+    elif run_simulation and speedup_settings.get("useSpeedup", False):
+
+        if speedup_settings.get("option") == "multiEVL":
+
+            print(f'The simulation will be run in individaul evl directories simultaneously.')
+            # # Create a unique evl directory for each row
+            # for row_index, row_values in enumerate(latin_hypercube.values()):
+            #     for seed in range(1, number_of_seeds_per_simulation + 1):
+            #         print(f'Running simulation for row {row_index} with values: {row_values} for seed {seed}')
+                    
+            #         # Set the seed for reproducibility
+            #         # np.random.seed(seed)
+                    
+            #         # Create directories for each seed of the simulation
+            #         row_dir = os.path.join(output_settings["outputPath"], f"row_{row_index}")
+            #         seed_dir = os.path.join(row_dir, f"seed_{seed}")
+            #         os.makedirs(seed_dir, exist_ok=True)
+                    
+            #         # Map the row values back to their corresponding metrics
+            #         latin_hypercube_sample = {metric: value for metric, value in zip(latin_hypercube.keys(), row_values)}
+            #         print(f"Sample: {latin_hypercube_sample}")
+                    
+            #         stress_component = config["application_domain"]["appliedStress"]["stress_component"]
+                    
+            #         detectionMethod = config["step_detection_settings"]["detectionMethod"]
+                    
+            #         run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row_index,seed,detectionMethod,library_driven,build_dir,speedup=True)
+
+
+
     return()
 
 if __name__ == "__main__":
