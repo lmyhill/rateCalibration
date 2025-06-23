@@ -10,7 +10,6 @@ import json
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 from scipy.stats import qmc
-import ruptures as rpt
 import shutil
 
 config_path = "config.json"
@@ -141,7 +140,7 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
         waiting_times,numEvents=compute_average_dwell_threshold_correlatedJumpsIncluded(name,betaPthreshold)
     elif detectionMethod=="custom":
         print("Using custom step detection for rate calculation")
-        figure_dir = os.path.join(output_settings["outputPath"],f"seed_{seed}",f"row_{row}","step_detection_figures")
+        figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","step_detection_figures")
         os.makedirs(figure_dir, exist_ok=True)
         waiting_times, step_indices, fig = rudimentary_multistep_waiting_times(
         betaP_1, time_s, step_height=0.0085, tolerance=0.002, start_value=0.001,output_stepfit=output_settings["outputStepFitPlots"],plotName=os.path.join(figure_dir, f'step_detection_seed_{seed}_row_{row}.png'))
@@ -264,6 +263,15 @@ def rudimentary_multistep_waiting_times(signal, time, step_height, tolerance, st
                 break
         else:
             idx += 1
+
+    # If only one band is detected, return NaN for waiting times and band indices
+    if len(waiting_times) == 1:
+        waiting_times = [np.nan]
+
+    if len(waiting_times) > 1:
+        #ignore the last waiting time because no event is detected at the tail of the signal
+        waiting_times = waiting_times[:-1]
+
 
     if output_stepfit:
     # Plotting
@@ -681,6 +689,8 @@ def main():
     
     build_dir = config.get("build_dir", False)
 
+    copy_config = config.get("copy_config", False)
+
     # Validate and print the configuration
     # print("Configuration loaded:")
     # print(f"ufl: {ufl}")
@@ -731,6 +741,11 @@ def main():
     for metric, values in latin_hypercube.items():
         print(f"{metric}: {values[:5]}...")  # Print first 5 values for brevity
 
+    if copy_config:
+        # Copy the config.json file to the output directory
+        config_output_path = os.path.join(output_settings["outputPath"], "config.json")
+        shutil.copy(config_path, config_output_path)
+        print(f"Config file copied to {config_output_path}")
 
     if output_settings.get("outputHypercube", False):
 
@@ -783,9 +798,10 @@ def main():
                 np.random.seed(seed)
                 
                 #create directories for each seed of the simulation
+                row_dir = os.path.join(output_settings["outputPath"], f"row_{row_index}")
                 seed_dir = os.path.join(output_settings["outputPath"], f"seed_{seed}")
                 os.makedirs(seed_dir, exist_ok=True)
-                seed_row_dir = os.path.join(seed_dir, f"row_{row_index}")
+                seed_row_dir = os.path.join(row_dir, f"seed_{seed}")
                 
                 # Map the row values back to their corresponding metrics
                 latin_hypercube_sample = {metric: value for metric, value in zip(latin_hypercube.keys(), row_values)}
@@ -876,7 +892,7 @@ def main():
                 # Output individual simulation results
                 if output_settings.get("outputIndividualSimulationDictionaries", False):
                 # Create a directory for individual simulation results
-                    individual_sim_dir = os.path.join(output_settings["outputPath"], f"seed_{seed}", "individual_simulation_results")
+                    individual_sim_dir = os.path.join(seed_row_dir, "individual_simulation_results")
                     os.makedirs(individual_sim_dir, exist_ok=True)
                     # Save the individual simulation results
                     if output_settings.get("singleSimulationDictionaryFormat", "txt").lower() == "txt":
@@ -891,10 +907,36 @@ def main():
                     else:
                         print(f"Error: Unsupported output format '{output_settings.get('singleSimulationDictionaryFormat')}'.")
                         sys.exit(1)
+
+
+                # Write simulation results to a populated hypercube file in the hypercube_info directory
+                populated_hypercube_path = os.path.join(hypercube_dir, 'populated_hypercube.txt')
+                write_header = not os.path.exists(populated_hypercube_path)
+                with open(populated_hypercube_path, 'a') as f:
+                    if write_header:
+                        f.write("rowID\tseed\tappliedStress\ttemperature\tB_0e\tB_1e\tB_0s\tB1_s\trate\n")
+                    rowID = row_index
+                    appliedStress = latin_hypercube_sample.get("appliedStress", "")
+                    temperature = latin_hypercube_sample.get("appliedTemperature", "")
+                    B_0e = latin_hypercube_sample.get("B0e_SI", "")
+                    B_1e = latin_hypercube_sample.get("B1e_SI", "")
+                    B_0s = latin_hypercube_sample.get("B0s_SI", "")
+                    B1_s = latin_hypercube_sample.get("B1s_SI", "")
+                    rate = single_sim_dict.get("rate", "")
+                    f.write(f"{rowID}\t{seed}\t{appliedStress}\t{temperature}\t{B_0e}\t{B_1e}\t{B_0s}\t{B1_s}\t{rate}\n")
+                    
                 
                 # Append the results to the simulation_results dictionary
                 simulation_results[row_index] = single_sim_dict
                 id_tag += 1
+
+                # If the rate for this simulation is zero or Nan, skip the rest of the seeds for this simulation
+                if single_sim_dict.get("rate", 0) <= 0 or np.isnan(single_sim_dict.get("rate", 0)):
+                    print(f"Skipping remaining seeds for row {row_index} due to zero or NaN rate.")
+                    break
+
+
+
             
         # organize the simulation results in the desired format
         # Compute the average waiting time per simulation

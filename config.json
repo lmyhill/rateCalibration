@@ -204,6 +204,7 @@
     },
     "outputSettings": {
         "outputPath": "/Users/liammyhill/Desktop/UQproject/rateCalibration/DDDresults/newStepDetect",
+        "copy_config": true,
         "outputHypercube": true,
         "outputHypercubeFileName": "prePopulatedHypercube",
         "outputHypercubeFormat": "txt",
