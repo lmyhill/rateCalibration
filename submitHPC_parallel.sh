@@ -13,6 +13,7 @@ SANDBOXDIR="/scratch/${USER}/DDD/Palmetto-Apptainer-Builds/DDD/archDDD.sandbox"
 SCRIPT_PY="parallel_run.py"
 JOB_BUILDDIR="/root/MoDELib2/build_${SLURM_JOB_ID}"
 
+
 # Optional: If script relies on current working directory
 WORKDIR="$SLURM_SUBMIT_DIR"
 
@@ -34,9 +35,9 @@ apptainer exec --writable --fakeroot --bind $BIND_PATHS "$SANDBOXDIR" bash -c "
   make -j$SLURM_CPUS_PER_TASK
 "
 
-#----------- Modify config.json with updated build directory
-sed -i "s|\"tools_dir\": \".*\"|\"build_dir\": \"$JOB_BUILDDIR\"|" config.json
-
+#----------- Modify config.json with updated build directory and job ID -----------
+sed -i "s|\"build_dir\": \".*\"|\"build_dir\": \"$JOB_BUILDDIR\"|" config.json
+sed -i "s|\"job_id\": \".*\"|\"job_id\": \"$SLURM_JOB_ID\"|" config.json
 
 # ----------- Run Job -----------
 
