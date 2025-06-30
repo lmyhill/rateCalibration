@@ -198,6 +198,14 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     returnDict['glideSteps'] = glideSteps
     returnDict['coreSize'] = latin_hypercube_sample["coreSize"]
     returnDict['seed'] = seed
+
+    # Save the returnDict to a text file in the figure_dir
+    figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","simulation_results")
+    os.makedirs(figure_dir, exist_ok=True)
+    output_file = os.path.join(figure_dir, f"results_seed_{seed}_row_{row}.txt")
+    with open(output_file, "w") as f:
+        for key, value in returnDict.items():
+            f.write(f"{key}: {value}\n")
         
     # print("returnDict Written")
     # # Print the returnDict for debugging
