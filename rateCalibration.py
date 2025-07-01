@@ -180,7 +180,8 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     returnDict['time [s]'] = time_s
     
     # Extract other simulation results
-    returnDict['stress'] = stress
+    returnDict['stress (Pa)'] = stress
+    returnDict['stress (MPa)'] = stress / 1e6
     returnDict['betaP_1'] = betaP_1
     returnDict['dotBetaP'] = dotBetaP
     returnDict['stress_component'] = stress_component
@@ -197,7 +198,12 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     returnDict['nodesPerLine'] = nodesPerLine
     returnDict['glideSteps'] = glideSteps
     returnDict['coreSize'] = latin_hypercube_sample["coreSize"]
+    returnDict['alphaLineTension'] = latin_hypercube_sample["alphaLineTension"]
     returnDict['seed'] = seed
+    returnDict['B0e_SI'] = latin_hypercube_sample["B0e_SI"]
+    returnDict['B1e_SI'] = latin_hypercube_sample["B1e_SI"]
+    returnDict['B0s_SI'] = latin_hypercube_sample["B0s_SI"]
+    returnDict['B1s_SI'] = latin_hypercube_sample["B1s_SI"]
 
     # Save the returnDict to a text file in the figure_dir
     figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","simulation_results")

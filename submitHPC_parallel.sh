@@ -37,7 +37,7 @@ apptainer exec --writable --fakeroot --bind $BIND_PATHS "$SANDBOXDIR" bash -c "
 
 #----------- Modify config.json with updated build directory and job ID -----------
 sed -i "s|\"build_dir\": \".*\"|\"build_dir\": \"$JOB_BUILDDIR\"|" config.json
-sed -i "s|\"job_id\": \".*\"|\"job_id\": \"$SLURM_JOB_ID\"|" config.json
+
 
 # ----------- Run Job -----------
 
