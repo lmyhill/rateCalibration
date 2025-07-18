@@ -11,7 +11,7 @@ def simulation_wrapper(args):
     """Wrapper to pass multiple arguments to the simulation function."""
     (latin_hypercube_sample, stress_component, ufl_base, DD_settings, noise_settings,
      material_settings, elasticDeformation_settings, polycrystal_settings, microstructure_settings,
-     output_settings, row, seed, detectionMethod, library_driven, build_dir) = args
+     output_settings, row, seed, detectionMethod, step_detection_settings, library_driven, build_dir) = args
     
     job_id = None
     if build_dir:
@@ -31,7 +31,7 @@ def simulation_wrapper(args):
     return run_arrhenius_simulation(
         latin_hypercube_sample, stress_component, unique_ufl, DD_settings, noise_settings,
         material_settings, elasticDeformation_settings, polycrystal_settings, microstructure_settings,
-        output_settings, row, seed, detectionMethod, library_driven, build_dir
+        output_settings, row, seed, detectionMethod, step_detection_settings, library_driven, build_dir
     )
 
 
@@ -137,6 +137,7 @@ def main():
                 row,
                 seed,
                 detectionMethod,
+                step_detection_settings,
                 library_driven,
                 build_dir
             ))

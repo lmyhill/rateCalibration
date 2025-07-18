@@ -11,7 +11,7 @@
 # ----------- Variables -----------
 SANDBOXDIR="/scratch/${USER}/DDD/Palmetto-Apptainer-Builds/DDD/archDDD.sandbox"
 SCRIPT_PY="parallel_run.py"
-JOB_BUILDDIR="/root/MoDELib2/build_${SLURM_JOB_ID}"
+JOB_BUILDDIR="/scratch/lmyhill/DDD/MoDELib2/build_${SLURM_JOB_ID}"
 
 
 # Optional: If script relies on current working directory

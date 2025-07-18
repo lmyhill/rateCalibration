@@ -30,7 +30,7 @@ with open(config_path, "r") as config_file:
         from modlibUtils import *
 
 #define a function to run the langevin thermostat simulation and extract the rate
-def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,library_driven=True,build_dir=False):
+def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False):
     
     returnDict = {}
     
@@ -141,9 +141,12 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     elif detectionMethod=="custom":
         print("Using custom step detection for rate calculation")
         figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","step_detection_figures")
+        step_height = step_detction_settings["step_height"]
+        step_tolerance = step_detction_settings["tolerance"]
+        start_value = step_detction_settings["start_value"]
         os.makedirs(figure_dir, exist_ok=True)
         waiting_times, step_indices, fig = rudimentary_multistep_waiting_times(
-        betaP_1, time_s, step_height=0.0085, tolerance=0.002, start_value=0.001,output_stepfit=output_settings["outputStepFitPlots"],plotName=os.path.join(figure_dir, f'step_detection_seed_{seed}_row_{row}.png'))
+        betaP_1, time_s, step_height=step_height, tolerance=step_tolerance, start_value=start_value,output_stepfit=output_settings["outputStepFitPlots"],plotName=os.path.join(figure_dir, f'step_detection_seed_{seed}_row_{row}.png'))
         if waiting_times:
             print(f"Waiting times detected: {waiting_times}")
             rate= compute_rate(waiting_times)
@@ -827,7 +830,7 @@ def main():
                 detectionMethod = config["step_detection_settings"]["detectionMethod"]
                 
                 single_sim_dict = {}
-                single_sim_dict = run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row_index,seed,detectionMethod,library_driven,build_dir)
+                single_sim_dict = run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row_index,seed,detectionMethod,step_detection_settings,library_driven,build_dir)
                 if output_settings.get("outputInputFilesDirectory", False):
                     # Create a directory for the input files
                     input_files_dir = os.path.join(seed_row_dir, "input_files")
