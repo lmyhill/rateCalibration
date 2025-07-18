@@ -204,7 +204,8 @@
         "detectionMethod": "custom",
         "autoStepFinderPath":"/Users/liammyhill/Desktop/code/jacobkers-Loeff-Kerssemakers-et-al-AutoStepFinder-206822b/python",
         "step_height" : 0.0085,
-        "tolerance" : 0.002
+        "tolerance" : 0.002,
+        "start_value" : 0.001
     },
     "outputSettings": {
         "outputPath": "/scratch/lmyhill/DDD/buildContainerResults/rateCalibration/10node_dt005_0",
