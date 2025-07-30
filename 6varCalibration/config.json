@@ -1,0 +1,227 @@
+{
+    "ufl":"/scratch/lmyhill/DDD/MoDELib2/tutorials/",
+    "build_dir": "/root/MoDELib2/build",
+    "run_arrhenius_simulation": true,
+    "run_crss_simulation": false,
+    "library_driven": false,
+    "modelLibraryPath": "/root/MoDELib2/build/tools/pyMoDELib",
+    "modelPythonPath": "/root/MoDELib2/python",
+    "application_domain":{
+        "appliedStress": {
+            "stress_component":3,
+            "min_value": 100e6,
+            "max_value": 140e6 
+        },
+        "appliedTemperature": {
+            "min_value":  500,
+            "max_value": 800
+        }
+    },
+    "inputMetrics": {
+        "coreSize": {
+            "min_value": 0.5,
+            "max_value": 2.0 
+
+        },
+        "alphaLineTension": {
+            "min_value":  1,
+            "max_value": 2.0
+        },
+        "B0e_SI":
+        {
+            "min_value": 5e-5,
+            "max_value": 5e-4
+        },
+        "B1e_SI":
+        {
+            "min_value": 0.1e-17,
+            "max_value": 0.1e-16
+        },
+        "B0s_SI":
+        {
+            "min_value": 5e-5,
+            "max_value": 5e-4
+        },
+        "B1s_SI":
+        {
+            "min_value": 0.1e-17,
+            "max_value": 0.1e-16
+        }
+        
+    },
+    "speedup_settings": {
+        "useSpeedup": true,
+        "option": "multiEVL"
+    },
+    "DD_settings": {
+        "useFEM": "0",
+        "useDislocations": "1",
+        "useInclusions": "0",
+        "useElasticDeformation": "1",
+        "useClusterDynamics": "0",
+        "quadPerLength": "1",
+        "periodic_image_size": "1 1 1",
+        "EwaldLengthFactor": "1.0",
+        "remeshFrequency": "0",
+        "timeSteppingMethod": "fixed",
+        "dtMax": "1",
+        "dxMax": "0.5",
+        "maxJunctionIterations": "0",
+        "use_velocityFilter": "0",
+        "use_stochasticForce": "1",
+        "stochasticForce_seed": "1",
+        "Lmin": "5",
+        "Lmax": "20",
+        "outputFrequency": "100",
+        "outputQuadraturePoints": "1",
+        "glideSolverType": "Galerkin",
+        "climbSolverType": "none",
+        "Nsteps": "50000"
+    },
+    "noise_settings": {
+        "noiseFile": "",
+        "type": "",
+        "tag": "",
+        "seed": "",
+        "correlationFile_L": "",
+        "correlationFile_T": "",
+        "gridSize": [
+            100,
+            100,
+            1
+        ],
+        "gridSpacing_SI": [
+            1.12e-10,
+            1.06e-10,
+            1e-10
+        ],
+        "a_cai_SI": "5.59e-10"
+    },
+    "material_settings": {
+        "materialFile": "Cu.txt",
+        "enabledSlipSystems": "Shockley",
+        "glidePlaneNoise": "None",
+        "atomsPerUnitCell": "1",
+        "dislocationMobilityType": "FCC",
+        "rho": "8940",
+        "mu_0": 48e9,
+        "mu_1": "0",
+        "nu": "0.34",
+        "b_SI": "0.2556e-9"
+    },
+    "elasticDeformation_settings": {
+        "elasticDeformationFile": "ElasticDeformation.txt"
+    },
+    "polycrystal_settings": {
+        "meshFile": "unitCube24.msh",
+        "grain1globalX1": [
+            0,
+            1,
+            1
+        ],
+        "grain1globalX3": [
+            2,
+            1,
+            -1
+        ],
+        "boxEdges": [
+            [
+                0,
+                1,
+                1
+            ],
+            [
+                1,
+                -1,
+                1
+            ],
+            [
+                2,
+                1,
+                -1
+            ]
+        ],
+        "boxScaling": [
+            60,
+            120,
+            60
+        ],
+        "X0": [
+            0,
+            0,
+            0
+        ],
+        "periodicFaceIDs": [
+            -1
+        ],
+        "gridSize_poly": [
+            100,
+            100
+        ],
+        "gridSpacing_SI_poly": [
+            1.12e-10,
+            1.06e-10
+        ]
+    },
+    "microstructure_settings": {
+        "microstructureFile1": "periodicDipoleIndividual.txt",
+        "slipSystemIDs": [
+            0,
+            1
+        ],
+        "exitFaceIDs": [
+            2,
+            2
+        ],
+        "dipoleCenters": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0
+            ]
+        ],
+        "nodesPerLine": [
+            10,
+            10
+        ],
+        "dipoleHeights": [
+            14,
+            14
+        ],
+        "glideSteps": [
+            5,
+            10
+        ]
+    },
+    "numberOfSimulations": 100,
+    "numberofSeedsPerSimulation": 3,
+    "step_detection_settings": {
+        "detectionMethod": "custom",
+        "autoStepFinderPath":"/Users/liammyhill/Desktop/code/jacobkers-Loeff-Kerssemakers-et-al-AutoStepFinder-206822b/python",
+        "step_height" : 0.0085,
+        "tolerance" : 0.002,
+        "start_value" : 0.001
+    },
+    "outputSettings": {
+        "outputPath": "/scratch/lmyhill/DDD/buildContainerResults/rateCalibration/10node_dt005_0",
+        "copy_config": true,
+        "outputHypercube": true,
+        "outputHypercubeFileName": "prePopulatedHypercube",
+        "outputHypercubeFormat": "txt",
+        "outputIndividualSimulationDictionaries":true,
+        "singleSimulationDictionaryFormat": "txt",
+        "outputInputFilesDirectory": true,
+        "outputEVL":false,
+        "outputF": true,
+        "outputStepFitPlots": true,
+        "outputResultsFileName": "filledHypercube",
+        "outputResultsFormat": "txt",
+        "output_betaP_figure": true,
+        "output_dotBetaP_figure": true
+    }
+}
