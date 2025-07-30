@@ -26,7 +26,7 @@ with open(config_path, "r") as config_file:
     if config["run_arrhenius_simulation"]:
         sys.path.append(config["modelLibraryPath"])
         sys.path.append(config["modelPythonPath"])
-        import pyMoDELib
+        #import pyMoDELib
         from modlibUtils import *
 
 #define a function to run the langevin thermostat simulation and extract the rate
