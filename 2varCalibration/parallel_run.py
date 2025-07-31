@@ -122,7 +122,7 @@ def main():
         sample = {key: latin_hypercube[key][i] for key in latin_hypercube}
         latin_hypercube_sample_list.append(sample)
 
-    seeds = list(range(number_of_seeds_per_simulation))
+    seeds = [s + 1 for s in range(number_of_seeds_per_simulation)]
 
     jobs = []
     for row in range(num_rows):

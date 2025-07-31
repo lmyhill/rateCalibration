@@ -4,8 +4,8 @@
     "run_arrhenius_simulation": true,
     "run_crss_simulation": false,
     "library_driven": false,
-    "modelLibraryPath": "/root/MoDELib2/build/tools/pyMoDELib",
-    "modelPythonPath": "/root/MoDELib2/python",
+    "modelLibraryPath": "/scratch/lmyhill/DDD/MoDELib2/build/tools/pyMoDELib",
+    "modelPythonPath": "/scratch/lmyhill/DDD/MoDELib2/python",
     "application_domain":{
         "appliedStress": {
             "stress_component":3,
