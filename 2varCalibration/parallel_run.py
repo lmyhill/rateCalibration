@@ -15,7 +15,7 @@ def simulation_wrapper(args):
     """Wrapper to pass multiple arguments to the simulation function."""
     (latin_hypercube_sample, stress_component, ufl_base, DD_settings, noise_settings,
      material_settings, elasticDeformation_settings, polycrystal_settings, microstructure_settings,
-     output_settings, row, seed, detectionMethod, step_detection_settings, library_driven, build_dir) = args
+     output_settings, row, seed, detectionMethod, step_detection_settings, library_driven, build_dir,crss_settings) = args
     
     job_id = None
     if build_dir:
@@ -35,7 +35,7 @@ def simulation_wrapper(args):
     return run_arrhenius_simulation(
         latin_hypercube_sample, stress_component, unique_ufl, DD_settings, noise_settings,
         material_settings, elasticDeformation_settings, polycrystal_settings, microstructure_settings,
-        output_settings, row, seed, detectionMethod, step_detection_settings, library_driven, build_dir
+        output_settings, row, seed, detectionMethod, step_detection_settings, library_driven, build_dir, crss_settings
     )
 
 
@@ -72,7 +72,9 @@ def main():
     step_detection_settings = config.get("step_detection_settings", {})
 
     speedup_settings = config.get("speedup_settings", {})
-    
+
+    crss_settings = config.get("crss_settings", {})
+
     build_dir = config.get("build_dir", False)
 
     copy_config = config.get("copy_config", False)
@@ -143,7 +145,8 @@ def main():
                 detectionMethod,
                 step_detection_settings,
                 library_driven,
-                build_dir
+                build_dir,
+                crss_settings
             ))
 
     results = []

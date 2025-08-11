@@ -29,6 +29,12 @@
         }
         
     },
+    "crss_settings":{
+        "compute_crss": true,
+        "stress_min": 100e6,
+        "stress_max": 140e6,
+        "stress_increment": 5e6
+    },
     "speedup_settings": {
         "useSpeedup": true,
         "option": "multiEVL"

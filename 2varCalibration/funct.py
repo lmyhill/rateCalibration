@@ -25,7 +25,7 @@ with open(config_path, "r") as config_file:
         from modlibUtils import *
 
 #define a function to run the langevin thermostat simulation and extract the rate
-def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False):
+def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False,crss_settings=False):
     
     returnDict = {}
     
@@ -130,11 +130,15 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
         else:
             print("No waiting times detected, setting rate to NaN")
             rate = np.nan
+        compute_psd(ufl,os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","psd"))
         temperature=latin_hypercube_sample["appliedTemperature"]
         invTemp=1/(temperature)
-    
-        
-     
+
+    if crss_settings["compute_crss"]:
+        # Compute the CRSS based on the current simulation parameters
+        crss = compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,output_settings,row,seed)
+        returnDict['CRSS'] = crss
+
     #Extract the quantities related to the rate from the simulation
     returnDict['rate']=rate
     returnDict['waitingTimes'] = waiting_times
@@ -163,10 +167,10 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     returnDict['coreSize'] = latin_hypercube_sample["coreSize"]
     returnDict['alphaLineTension'] = latin_hypercube_sample["alphaLineTension"]
     returnDict['seed'] = seed
-    returnDict['B0e_SI'] = latin_hypercube_sample["B0e_SI"]
-    returnDict['B1e_SI'] = latin_hypercube_sample["B1e_SI"]
-    returnDict['B0s_SI'] = latin_hypercube_sample["B0s_SI"]
-    returnDict['B1s_SI'] = latin_hypercube_sample["B1s_SI"]
+    # returnDict['B0e_SI'] = latin_hypercube_sample["B0e_SI"]
+    # returnDict['B1e_SI'] = latin_hypercube_sample["B1e_SI"]
+    # returnDict['B0s_SI'] = latin_hypercube_sample["B0s_SI"]
+    # returnDict['B1s_SI'] = latin_hypercube_sample["B1s_SI"]
 
     # Save the returnDict to a text file in the figure_dir
     figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","simulation_results")
@@ -465,3 +469,427 @@ def compute_rate(waiting_times):
     if waiting_times.size == 0:
         return np.nan
     return 1.0 / np.mean(waiting_times)
+
+
+def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,output_settings,row,seed):
+    """
+    Compute the Critical Resolved Shear Stress (CRSS) based on the current simulation parameters.
+
+    Parameters:
+        latin_hypercube_sample (dict): Sample parameters from the Latin hypercube.
+        stress_component (int): The stress component to consider.
+        ufl (str): Path to the UFL directory.
+        DD_settings (dict): Settings for dislocation dynamics.
+        noise_settings (dict): Settings for noise.
+        material_settings (dict): Material properties.
+        elasticDeformation_settings (dict): Elastic deformation settings.
+        polycrystal_settings (dict): Polycrystal settings.
+        microstructure_settings (dict): Microstructure settings.
+
+    Returns:
+        crss (float): Computed CRSS value.
+    """
+    start_stress = crss_settings["stress_min"] #MPa
+    end_stress = crss_settings["stress_max"] #MPa
+    stress_increment = crss_settings["stress_increment"] #MPa
+
+    mu=material_settings["mu_0"]
+
+    #Create a datastructure for a uniform distribution of the stress states
+    stress_states = []
+    for i in range(int(start_stress), int(end_stress), int(stress_increment)):
+        stress_states.append(formatStress(stress_component,i/mu))
+    stress_states = np.array(stress_states)
+
+    # Initialize variables for the bisection algorithm
+    low = 0
+    high = len(stress_states) - 1
+    crss_found = False
+    count=0
+
+    while low <= high:
+        os.chdir(ufl)
+        # Clean old simulation data
+        os.system('rm -rf F/*')
+        os.system('rm -rf evl/*')
+
+        #write the simulation input files
+
+        writeElasticDeformationFile(elasticDeformation_settings["elasticDeformationFile"],stress_states[count])
+        writeDipoleMicrostructureFile(microstructure_settings["microstructureFile1"],microstructure_settings["slipSystemIDs"],microstructure_settings["exitFaceIDs"],microstructure_settings["dipoleCenters"],microstructure_settings["nodesPerLine"],microstructure_settings["dipoleHeights"],microstructure_settings["glideSteps"])
+        writeDDfile(DD_settings["useFEM"],DD_settings["useDislocations"],DD_settings["useInclusions"],DD_settings["useElasticDeformation"],DD_settings["useClusterDynamics"],DD_settings["quadPerLength"],DD_settings["periodic_image_size"],DD_settings["EwaldLengthFactor"],latin_hypercube_sample["coreSize"],latin_hypercube_sample["alphaLineTension"],DD_settings["remeshFrequency"],DD_settings["timeSteppingMethod"],DD_settings["dtMax"],DD_settings["dxMax"],DD_settings["maxJunctionIterations"],DD_settings["use_velocityFilter"],'0','0',DD_settings["Lmin"],DD_settings["Lmax"],DD_settings["outputFrequency"],DD_settings["outputQuadraturePoints"],DD_settings["glideSolverType"],DD_settings["climbSolverType"],int(DD_settings['Nsteps']))
+        writeMaterialFile(material_settings["materialFile"],material_settings["enabledSlipSystems"],material_settings["glidePlaneNoise"],material_settings["atomsPerUnitCell"],material_settings["dislocationMobilityType"],material_settings["B0e_SI"],material_settings["B1e_SI"],material_settings["B0s_SI"],material_settings["B1s_SI"],material_settings["rho"],material_settings["mu_0"],material_settings["mu_1"],material_settings["nu"])
+        writePolyCrystalFile(polycrystal_settings["meshFile"],material_settings["materialFile"],latin_hypercube_sample["appliedTemperature"],np.array(polycrystal_settings["grain1globalX1"]),np.array(polycrystal_settings["grain1globalX3"]),np.array(polycrystal_settings["boxEdges"]),np.array(polycrystal_settings["boxScaling"]),np.array(polycrystal_settings["X0"]),np.array(polycrystal_settings["periodicFaceIDs"]),np.array(polycrystal_settings["gridSize_poly"]),np.array(polycrystal_settings["gridSpacing_SI_poly"]))
+        writeNoiseFile(noise_settings["noiseFile"],noise_settings["type"],'0',noise_settings["seed"],noise_settings["correlationFile_L"],noise_settings["correlationFile_T"],noise_settings["gridSize"],noise_settings["gridSpacing_SI"],noise_settings["a_cai_SI"])
+
+        
+        mid = (low + high) // 2
+        current_stress = stress_states[mid]
+
+        # Run simulation with the current stress state
+        print(f"Running simulation for stress state: {current_stress}")
+        MG()
+        DDomp()
+
+        # Get the plastic strain rate over the last 1000 steps
+        F,Flabels=readFfile('./F')
+        
+        if stress_component==3:
+            dotBetaP=getFarray(F,Flabels,'dotBetaP_12 [cs/b]')
+            betaP_1=getFarray(F,Flabels,'betaP_12')
+            
+        # Create subplots for betaP_1 and dotBetaP
+        fig, axs = plt.subplots(2, 1, figsize=(10, 12))
+
+        # Plot betaP_1
+        axs[0].plot(betaP_1, label="betaP_1", color="blue")
+        axs[0].set_xlabel("Steps")
+        axs[0].set_ylabel("BetaP_1")
+        axs[0].set_title("BetaP_1 Evolution")
+        axs[0].legend()
+        axs[0].grid()
+
+        # Plot dotBetaP
+        axs[1].plot(dotBetaP, label="dotBetaP", color="green")
+        axs[1].set_xlabel("Steps")
+        axs[1].set_ylabel("dotBetaP")
+        axs[1].set_title("dotBetaP Evolution")
+        axs[1].legend()
+        axs[1].grid()
+
+        plt.tight_layout()
+        plt.savefig(f"{output_settings['outputPath']}/row{row}_seed{seed}/betaP_dotBetaP_evolution_{current_stress}.png")
+
+        dotBetaP_1=dotBetaP[-10:]
+        print(f'mean(dotBetaP_1) = {np.mean(dotBetaP_1)}')
+        x = np.arange(len(betaP_1) - 10, len(betaP_1))
+        y = betaP_1[-10:]
+        slope, _ = np.polyfit(x, y, 1)
+
+        #if slope is above threshold, mark CRSS as found
+        if slope > crss_settings["slope_threshold"]:
+            min_crss = current_stress
+            crss_found = True
+            print(f"CRSS found at stress state: {current_stress}")
+            break
+
+        count += 1
+
+    if crss_found:
+        print(f"Minimum CRSS found at stress state: {min_crss * mu / 1e6} MPa")
+    else:
+        print("CRSS not found within the given stress range.")
+
+
+    return min_crss * mu / 1e6  # Return CRSS in MPa
+
+
+
+def compute_psd(ufl,savepath):
+
+    # ----------------------
+    # EVL Formatting
+    # ----------------------
+
+    LOOP_ID_COL = 0
+    LOOP_TYPE_COL = 11
+    NETWORK_NODE_COL = 5
+    SESSILE_TYPE = 1
+
+    # ----------------------
+    # Directories & EVL files
+    # ----------------------
+    evl_dir = os.path.join(ufl, 'evl')
+    evlFiles = [f for f in os.listdir(evl_dir) if f.endswith('.txt') and f.startswith('evl_')]
+
+    # ----------------------
+    # Rotation matrix from polycrystal.txt
+    # ----------------------
+    C2G1 = None
+    with open(os.path.join(ufl, 'inputFiles', 'polycrystal.txt'), 'r') as f:
+        for line in f:
+            if 'C2G1' in line:
+                C2G1 = np.fromstring(line.split('=')[1], sep=' ')
+                C2G1 = np.append(C2G1, np.fromstring(f.readline().strip(), sep=' '))
+                C2G1 = np.append(C2G1, np.fromstring(f.readline().strip(), sep=' '))
+                C2G1 = C2G1.reshape((3, 3))
+                break
+
+    # ----------------------
+    # Storage
+    # ----------------------
+    dataDict = {}
+    filtered_rotated_nodes = {}
+
+    # For k-space averaging
+    all_k_vals = []
+    all_fft_vals = []
+    all_rg_vals = []
+
+    # ----------------------
+    # Process each EVL file
+    # ----------------------
+    for evlFile in evlFiles:
+        runID = evlFile.split('_')[1].strip('.txt')
+
+        # Load EVL object
+        dataDict[runID] = readEVLtxtLoopNode(os.path.join(evl_dir, evlFile.strip('.txt')))
+        loop_nodes = dataDict[runID].loopNodes
+
+        # Get glissile nodes
+        glissile_nodes = find_glissile_nodes(ufl, runID)
+
+        # Apply rotation matrix
+        if C2G1 is not None:
+            for node in glissile_nodes:
+                rotated_node = np.dot(C2G1, node[:3])
+                loop_id = int(node[LOOP_ID_COL])
+                filtered_rotated_nodes.setdefault(loop_id, []).append(rotated_node)
+
+    # ----------------------
+    # Loop-by-loop analysis with physical k
+    # ----------------------
+    all_k_vals = []
+    all_fft_vals = []
+    all_rg_vals = []
+
+    for loop_id, nodes in filtered_rotated_nodes.items():
+        nodes = np.array(nodes)  # shape: (n_nodes, 3)
+
+        # --- Total loop length (close loop for distance calculation) ---
+        closed_nodes = np.vstack([nodes, nodes[0]])
+        segment_lengths = np.linalg.norm(np.diff(closed_nodes, axis=0), axis=1)
+        L = np.sum(segment_lengths)  # total loop length in simulation length units
+        avg_spacing = L / nodes.shape[0]
+
+        # --- Center of mass ---
+        com = np.mean(nodes, axis=0)
+
+        # --- Positions relative to COM ---
+        rel_positions = nodes - com
+
+        # --- FFT along node index dimension ---
+        fft_vals = np.fft.fft(rel_positions, axis=0)     # shape: (n_nodes, 3)
+        power_spectrum = np.sum(np.abs(fft_vals) ** 2, axis=1)  # sum over xyz
+
+        # --- Physical wave vectors ---
+        n_nodes = nodes.shape[0]
+        m_vals = np.fft.fftfreq(n_nodes) * n_nodes  # integer mode numbers
+        k_vals = (2.0 * np.pi * m_vals) / L         # physical wave vectors [1/length_unit]
+
+        # --- Radius of gyration ---
+        squared_distances = np.sum(rel_positions ** 2, axis=1)
+        rg = np.sqrt(np.mean(squared_distances))
+
+        # --- Store all data for binning ---
+        all_k_vals.extend(k_vals)
+        all_fft_vals.extend(power_spectrum)
+        all_rg_vals.extend([rg] * len(k_vals))
+
+    # ----------------------
+    # Bin & average in physical k-space
+    # ----------------------
+    all_k_vals = np.array(all_k_vals)
+    all_fft_vals = np.array(all_fft_vals)
+    all_rg_vals = np.array(all_rg_vals)
+
+    # Only positive k for plotting
+    mask_pos_k = all_k_vals >= 0
+    k_vals_abs = all_k_vals[mask_pos_k]
+    fft_vals_arr = all_fft_vals[mask_pos_k]
+    rg_vals_arr = all_rg_vals[mask_pos_k]
+
+    # Bin edges in physical k (auto-spacing)
+    k_min, k_max = np.min(k_vals_abs), np.max(k_vals_abs)
+    num_bins = 30
+    k_bins = np.linspace(k_min, k_max, num_bins + 1)
+    k_bin_centers = 0.5 * (k_bins[:-1] + k_bins[1:])
+
+    fft_avg = []
+    rg_avg = []
+    for i in range(len(k_bins) - 1):
+        bin_mask = (k_vals_abs >= k_bins[i]) & (k_vals_abs < k_bins[i + 1])
+        if np.any(bin_mask):
+            fft_avg.append(np.mean(fft_vals_arr[bin_mask]))
+            rg_avg.append(np.mean(rg_vals_arr[bin_mask]))
+        else:
+            fft_avg.append(np.nan)
+            rg_avg.append(np.nan)
+
+    fft_avg = np.array(fft_avg)
+    rg_avg = np.array(rg_avg)
+
+    # ----------------------
+    # Plots in physical units using log-log
+    # ----------------------
+    # for psd plot, add a trendline and equation to the data
+    plt.figure()
+    plt.loglog(k_bin_centers, fft_avg, marker='o')
+    plt.xlabel(r'Wave vector $k$ [1/unit length]')
+    plt.ylabel('Average Power Spectrum')
+    plt.title('Average Power Spectrum vs Physical k')
+    plt.savefig(os.path.join(savepath, 'psd_plot.png'))
+
+    # Fit a line to the log-log data
+    log_k = np.log(k_bin_centers)
+    log_fft = np.log(fft_avg)
+    fit = np.polyfit(log_k[~np.isnan(log_fft)], log_fft[~np.isnan(log_fft)], 1)
+    fit_line = np.exp(fit[1]) * k_bin_centers ** fit[0]
+    plt.loglog(k_bin_centers, fit_line, linestyle='--', color='red')
+    plt.legend(['Data', f'Fit: y = {fit[0]:.2f}x + {fit[1]:.2f}'])
+    plt.grid(True)
+
+    plt.figure()
+    plt.plot(k_bin_centers, rg_avg, marker='o', color='orange')
+    plt.xlabel(r'Wave vector $k$ [1/unit length]')
+    plt.ylabel('Average Radius of Gyration')
+    plt.title('Radius of Gyration vs Physical k')
+    plt.grid(True)
+    plt.savefig(os.path.join(savepath, 'rg_plot.png'))
+    return()
+
+
+### functions for parsing nodal info from evl files
+
+class EVL:
+    nodes=np.empty([0,0])
+
+def readEVLtxtLoopNode(filename: str) -> EVL:
+
+    evlFile = open(filename+'.txt', "r")
+
+    numNetNodes=int(evlFile.readline().rstrip())
+
+    numLoops=int(evlFile.readline().rstrip())
+
+    numLinks=int(evlFile.readline().rstrip())
+
+    numLoopNodes=int(evlFile.readline().rstrip())
+
+    numSpInc=int(evlFile.readline().rstrip())
+
+    numPolyInc=int(evlFile.readline().rstrip())
+
+    numPolyIncNodes=int(evlFile.readline().rstrip())
+
+    numPolyIncEdges=int(evlFile.readline().rstrip())
+
+    numEDrow=int(evlFile.readline().rstrip())
+
+    numCDrow=int(evlFile.readline().rstrip())
+
+    evl=EVL();
+
+
+
+    dislocLoopDataSpan = 17
+
+    evl.dislocLoop=np.empty([numLoops, dislocLoopDataSpan], dtype=np.float64)
+
+    # Read file line by line until we fill the array
+
+    for n in range(numLoops):
+
+        while True:  # Keep reading until we get a valid line
+
+            line = evlFile.readline()
+
+            # End of file check
+
+            if not line:
+
+                raise ValueError(f"Reached EOF before reading {numLoops} loops")
+
+            data = np.fromstring(line.rstrip(), sep=' ')
+
+            if len(data) == dislocLoopDataSpan:
+
+                evl.dislocLoop[n] = data
+
+                # Move to next node after successful read 
+
+                break
+
+
+
+    # init connectivity data
+
+    loopNodeDataSpan = 11
+
+    evl.loopNodes=np.empty([numLoopNodes, loopNodeDataSpan], dtype=np.float64)
+
+    # Read file line by line until we fill the array
+
+    for m in range(numLoopNodes):
+
+        while True:  # Keep reading until we get a valid line
+
+            line = evlFile.readline()
+
+            # End of file check
+
+            if not line:
+
+                raise ValueError(f"Reached EOF before reading {numLoopNodes} nodes")
+
+            data = np.fromstring(line.rstrip(), sep=' ')
+
+            if len(data) == loopNodeDataSpan:
+
+                evl.loopNodes[m] = data
+
+                # Move to next node after successful read 
+
+                break
+
+
+
+    return evl
+
+def find_glissile_nodes(dataDir, runID):
+
+    LOOP_ID_COL = 0
+    LOOP_TYPE_COL = 11
+    NETWORK_NODE_COL = 5
+    SESSILE_TYPE = 1
+
+
+    evl_path = os.path.join(dataDir, 'evl', f'evl_{runID}')
+    evl = readEVLtxtLoopNode(evl_path)
+    loop_data = evl.dislocLoop
+    loop_nodes = evl.loopNodes
+
+    # Get sessile loop IDs (vectorized)
+    sessile_mask = loop_data[:, LOOP_TYPE_COL] == SESSILE_TYPE
+    sessile_loop_ids = loop_data[sessile_mask, LOOP_ID_COL].astype(int)
+
+    # Handle case where sessile loops are not detected correctly
+    if not len(sessile_loop_ids):
+        unique_loop_ids, node_count_per_loop = np.unique(loop_nodes[:, LOOP_ID_COL], return_counts=True)
+        all_nodes_per_loop = {int(k): v for k, v in zip(unique_loop_ids, node_count_per_loop)}
+        sessile_loop_ids = [key for key, count in all_nodes_per_loop.items() if count < 12]
+
+    # Get all unique loop IDs (vectorized)
+    all_loop_ids = np.unique(loop_data[:, LOOP_ID_COL]).astype(int)
+
+    # Filter non-sessile loop IDs (vectorized)
+    non_sessile_loop_ids = all_loop_ids[~np.isin(all_loop_ids, sessile_loop_ids)]
+    #print the non-sessile loop IDs
+    # print(f"Non-sessile loop IDs for runID {runID}: {non_sessile_loop_ids}")
+
+    # Get sessile network nodes (vectorized)
+    sessile_network_mask = np.isin(loop_nodes[:, LOOP_ID_COL], sessile_loop_ids)
+    sessile_network_nodes = np.unique(loop_nodes[sessile_network_mask, NETWORK_NODE_COL]).astype(int)
+
+    # Precompute masks for fast filtering
+    non_sessile_node_mask = ~np.isin(loop_nodes[:, NETWORK_NODE_COL], sessile_network_nodes)
+    valid_loop_mask = np.isin(loop_nodes[:, LOOP_ID_COL], non_sessile_loop_ids)
+    combined_mask = non_sessile_node_mask & valid_loop_mask
+
+    # Group nodes by loop ID
+    filtered_nodes = loop_nodes[combined_mask]
+    return filtered_nodes
+
+
+
+
