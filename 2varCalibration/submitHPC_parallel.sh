@@ -12,7 +12,8 @@
 SANDBOXDIR="/scratch/${USER}/DDD/Palmetto-Apptainer-Builds/DDD/archDDD.sandbox"
 SCRIPT_PY="parallel_run.py"
 JOB_BUILDDIR="/scratch/lmyhill/DDD/MoDELib2/build_${SLURM_JOB_ID}"
-
+VELOCITY_PROJECTION="X"   # Options: X, Y, Z
+SRC_FILE="/scratch/lmyhill/DDD/MoDELib2/src/DislocationDynamics/DislocationNode.cpp"
 
 # Optional: If script relies on current working directory
 WORKDIR="$SLURM_SUBMIT_DIR"
@@ -21,6 +22,12 @@ WORKDIR="$SLURM_SUBMIT_DIR"
 BIND_PATHS="/scratch"
 
 # BUILDDIR="/root/MoDELib2/build"
+
+# ----------- Adjust the fixed nodal velocity before compile -----------
+
+# This will replace exactly the line containing temp.push_back(VectorDim::UnitZ());
+# with the correct velocity projection from VELOCITY_PROJECTION
+sed -i "129s|VectorDim::Unit[XYZ]();|VectorDim::Unit${VELOCITY_PROJECTION}();|" "$SRC_FILE"
 
 # -----------Compile Tools -----
 
