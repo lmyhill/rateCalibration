@@ -117,26 +117,28 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     
     if detectionMethod=="custom":
         print("Using custom step detection for rate calculation")
-        figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","step_detection_figures")
+        step_detection_figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","step_detection_figures")
+        psd_figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","psd")
+        crss_figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","crss")
         step_height = step_detction_settings["step_height"]
         step_tolerance = step_detction_settings["tolerance"]
         start_value = step_detction_settings["start_value"]
         os.makedirs(figure_dir, exist_ok=True)
         waiting_times, step_indices, fig = rudimentary_multistep_waiting_times(
-        betaP_1, time_s, step_height=step_height, tolerance=step_tolerance, start_value=start_value,output_stepfit=output_settings["outputStepFitPlots"],plotName=os.path.join(figure_dir, f'step_detection_seed_{seed}_row_{row}.png'))
+        betaP_1, time_s, step_height=step_height, tolerance=step_tolerance, start_value=start_value,output_stepfit=output_settings["outputStepFitPlots"],plotName=os.path.join(step_detection_figure_dir, f'step_detection_seed_{seed}_row_{row}.png'))
         if waiting_times:
             print(f"Waiting times detected: {waiting_times}")
             rate= compute_rate(waiting_times)
         else:
             print("No waiting times detected, setting rate to NaN")
             rate = np.nan
-        compute_psd(ufl,os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","psd"))
+        compute_psd(ufl,os.path.join(psd_figure_dir,f"row_{row}",f"seed_{seed}","psd"))
         temperature=latin_hypercube_sample["appliedTemperature"]
         invTemp=1/(temperature)
 
     if crss_settings["compute_crss"]:
         # Compute the CRSS based on the current simulation parameters
-        crss = compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,output_settings,row,seed)
+        crss = compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,output_settings,row,seed,build_dir)
         returnDict['CRSS'] = crss
 
     #Extract the quantities related to the rate from the simulation
@@ -471,7 +473,7 @@ def compute_rate(waiting_times):
     return 1.0 / np.mean(waiting_times)
 
 
-def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,output_settings,row,seed):
+def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,crss_fig_dir,row,seed,build_dir):
     """
     Compute the Critical Resolved Shear Stress (CRSS) based on the current simulation parameters.
 
@@ -507,8 +509,12 @@ def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_s
     crss_found = False
     count=0
 
+    #create a duplicate of the ufl directory and add _crss to the end of the path. Use this new directory for crss simulations
+    crss_ufl = f"{ufl}_crss"
+    os.system(f"cp -r {ufl} {crss_ufl}")
+
     while low <= high:
-        os.chdir(ufl)
+        os.chdir(crss_ufl)
         # Clean old simulation data
         os.system('rm -rf F/*')
         os.system('rm -rf evl/*')
@@ -524,12 +530,13 @@ def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_s
 
         
         mid = (low + high) // 2
-        current_stress = stress_states[mid]
+        current_stress_Mu = stress_states[mid]
+        current_stress_MPa = current_stress*mu*1e-6
 
         # Run simulation with the current stress state
-        print(f"Running simulation for stress state: {current_stress}")
-        MG()
-        DDomp()
+        print(f"Running simulation for stress state: {current_stress_Mu}")
+        MG(os.path.abspath(os.path.join(build_dir, "tools")),crss_ufl)
+        DDomp(os.path.abspath(os.path.join(build_dir, "tools")),crss_ufl)
 
         # Get the plastic strain rate over the last 1000 steps
         F,Flabels=readFfile('./F')
@@ -558,7 +565,7 @@ def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_s
         axs[1].grid()
 
         plt.tight_layout()
-        plt.savefig(f"{output_settings['outputPath']}/row{row}_seed{seed}/betaP_dotBetaP_evolution_{current_stress}.png")
+        plt.savefig(f"{crss_fig_dir}/betaP_dotBetaP_evolution_row_{row}_seed_{seed}_{current_stress_MPa}MPa.png")
 
         dotBetaP_1=dotBetaP[-10:]
         print(f'mean(dotBetaP_1) = {np.mean(dotBetaP_1)}')
@@ -568,20 +575,20 @@ def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_s
 
         #if slope is above threshold, mark CRSS as found
         if slope > crss_settings["slope_threshold"]:
-            min_crss = current_stress
+            min_crss = current_stress_MPa
             crss_found = True
-            print(f"CRSS found at stress state: {current_stress}")
+            print(f"CRSS found at stress state: {current_stress_MPa} MPa")
             break
 
         count += 1
 
     if crss_found:
-        print(f"Minimum CRSS found at stress state: {min_crss * mu / 1e6} MPa")
+        print(f"Minimum CRSS found at stress state: {min_crss} MPa")
     else:
         print("CRSS not found within the given stress range.")
 
 
-    return min_crss * mu / 1e6  # Return CRSS in MPa
+    return min_crss  # Return CRSS in MPa
 
 
 
