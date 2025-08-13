@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=rateCalibration_2var
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=32
 #SBATCH --mem=50gb
 #SBATCH --time=72:00:00
 #SBATCH --output=out_%j.out
@@ -39,7 +39,7 @@ apptainer exec --writable --fakeroot --bind $BIND_PATHS "$SANDBOXDIR" bash -c "
   export CXXFLAGS='-O2 -march=x86-64 -mtune=generic'
   export CFLAGS='-O2 -march=x86-64 -mtune=generic'
   cmake ..
-  make -j$SLURM_CPUS_PER_TASK
+  make -j8
 "
 
 #----------- Modify config.json with updated build directory and job ID -----------
