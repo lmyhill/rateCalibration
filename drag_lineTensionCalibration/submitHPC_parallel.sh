@@ -1,12 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=rateCalibration_2var
+#SBATCH --job-name=rateCalibration_drag_lineTension
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=50gb
 #SBATCH --time=72:00:00
 #SBATCH --output=out_%j.out
 #SBATCH --error=err_%j.err
+#SBATCH --mail-user=lmyhill@clemson.edu
+#SBATCH --mail-type=FAIL,END     # Only mail on failure (success handled below)
 
 # ----------- Variables -----------
 SANDBOXDIR="/scratch/${USER}/DDD/github/Palmetto-Apptainer-Builds/DDD/archDDD.sandbox"
@@ -25,9 +27,16 @@ BIND_PATHS="/scratch"
 
 # ----------- Adjust the fixed nodal velocity before compile -----------
 
-# This will replace exactly the line containing temp.push_back(VectorDim::UnitZ());
-# with the correct velocity projection from VELOCITY_PROJECTION
-sed -i "129s|VectorDim::Unit[XYZ]();|VectorDim::Unit${VELOCITY_PROJECTION}();|" "$SRC_FILE"
+if [[ "$VELOCITY_PROJECTION" == "None" ]]; then
+  # Comment out any uncommented UnitX/Y/Z line
+  sed -i 's|^\(\s*\)temp.push_back(VectorDim::Unit[XYZ]());|\1// temp.push_back(VectorDim::UnitX());|' "$SRC_FILE"
+else
+  # First, uncomment if it is commented
+  sed -i "s|^\(\s*\)//\s*temp.push_back(VectorDim::Unit[XYZ]());|\1temp.push_back(VectorDim::Unit${VELOCITY_PROJECTION}());|" "$SRC_FILE"
+
+  # Then, replace any still-uncommented line with the chosen axis
+  sed -i "s|^\(\s*\)temp.push_back(VectorDim::Unit[XYZ]());|\1temp.push_back(VectorDim::Unit${VELOCITY_PROJECTION}());|" "$SRC_FILE"
+fi
 
 # -----------Compile Tools -----
 
@@ -44,6 +53,10 @@ apptainer exec --writable --fakeroot --bind $BIND_PATHS "$SANDBOXDIR" bash -c "
 
 #----------- Modify config.json with updated build directory and job ID -----------
 sed -i "s|\"build_dir\": \".*\"|\"build_dir\": \"$JOB_BUILDDIR\"|" config.json
+
+
+#----------Modify config.json with the current path as the output directory ----------------
+sed -i "s|\"outputPath\":.*|\"outputPath\": \"$WORKDIR\",|" config.json
 
 
 # ----------- Run Job -----------
