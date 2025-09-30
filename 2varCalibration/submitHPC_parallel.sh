@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=rateCalibration_2var
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=32
 #SBATCH --mem=50gb
 #SBATCH --time=72:00:00
 #SBATCH --output=out_%j.out
