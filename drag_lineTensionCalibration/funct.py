@@ -189,7 +189,10 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
         step_height = step_detction_settings["step_height"]
         step_tolerance = step_detction_settings["tolerance"]
         start_value = step_detction_settings["start_value"]
-        os.makedirs(figure_dir, exist_ok=True)
+        #make the necessary directories
+        os.makedirs(step_detection_figure_dir, exist_ok=True)
+        os.makedirs(psd_figure_dir, exist_ok=True)
+        os.makedirs(crss_figure_dir, exist_ok=True)
         waiting_times, step_indices, fig = rudimentary_multistep_waiting_times(
         betaP_1, time_s, step_height=step_height, tolerance=step_tolerance, start_value=start_value,output_stepfit=output_settings["outputStepFitPlots"],plotName=os.path.join(step_detection_figure_dir, f'step_detection_seed_{seed}_row_{row}.png'))
         if waiting_times:
