@@ -47,7 +47,7 @@ apptainer exec --writable --fakeroot --bind $BIND_PATHS "$SANDBOXDIR" bash -c "
   rm -rf *
   export CXXFLAGS='-march=x86-64 -mtune=generic'
   export CFLAGS='-march=x86-64 -mtune=generic'
-  cmake ..
+  cmake /root/MoDELib2-lmyhill/
   make -j8
 "
 
