@@ -417,7 +417,8 @@ def writeDipoleMicrostructureFile(microstructureFile,slipSystemIDs,exitFaceIDs,d
     setInputVector('inputFiles/'+microstructureFile1,'slipSystemIDs',slipSystemIDs,'slip system IDs for each dipole')
     setInputVector('inputFiles/'+microstructureFile1,'exitFaceIDs',exitFaceIDs,'0 is for edge, 4 for screw')
     if np.array(dipoleCenters).ndim == 2 and all(len(row) == len(dipoleCenters[0]) for row in dipoleCenters):
-        setInput2DVector('inputFiles/'+microstructureFile1, 'dipoleCenters', np.array(dipoleCenters), 'center of each dipole')
+        # setInputNDvector('inputFiles/'+microstructureFile1, 'dipoleCenters', np.array(dipoleCenters), 'center of each dipole')
+        setInputNDvector('inputFiles/'+microstructureFile1,'dipoleCenters',*np.array(dipoleCenters),newCom='center of each dipole')
     else:
         setInputVector('inputFiles/'+microstructureFile1, 'dipoleCenters', dipoleCenters, 'center of each dipole')
     setInputVector('inputFiles/'+microstructureFile1,'nodesPerLine',nodesPerLine,'number of extra nodes on each dipole')
