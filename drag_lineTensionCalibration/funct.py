@@ -179,7 +179,50 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
         "time_s": time_s,
         "betaP_1": betaP_1
     })
-    
+
+    # --- Record the measured separation height ---
+    filtered_nodes = {}
+
+    # process the evl files to find the exact separation distance of the dislocations in burgers vector units
+    evl_dict = readEVLtxtLoopNode(os.path.join(ufl, "evl/evl_0"))
+
+    # Get glissile nodes
+    glissile_nodes = find_glissile_nodes(ufl, 0)
+
+    # Group node positions by loop id
+    # Each node: [loop_id, node_id, x, y, z, ...]
+    for node in glissile_nodes:
+        loop_id = int(node[0])
+        pos = [node[2], node[3], node[4]]  # columns 2,3,4
+        filtered_nodes.setdefault(loop_id, []).append(pos)
+
+    # print(f"filtered_nodes: {filtered_nodes}")
+
+    # Debug: print all y positions for each loop
+    for loop_id, nodes in filtered_nodes.items():
+        y_positions = [pos[1] for pos in nodes]
+        # print(f"Loop {loop_id} y positions: {y_positions}")
+
+    # Improved separation calculation: group loops by sign of mean y
+    loop_means = {loop_id: np.mean([pos[1] for pos in nodes]) for loop_id, nodes in filtered_nodes.items()}
+    positive_means = [mean for mean in loop_means.values() if mean > 0]
+    negative_means = [mean for mean in loop_means.values() if mean < 0]
+
+    # print(f"Loop means: {loop_means}")
+    # print(f"Positive loop means: {positive_means}")
+    # print(f"Negative loop means: {negative_means}")
+
+    if positive_means and negative_means:
+        separation = np.mean(positive_means) - np.mean(negative_means)
+        separation_list = [separation]
+    else:
+        separation_list = []
+    # print(f"Raw separation list (before filtering): {separation_list}")
+
+    separation_measured = np.unique([
+        sep for sep in separation_list if sep > 1e-6 and not np.isnan(sep)
+    ])
+
     
     if detectionMethod=="custom":
         print("Using custom step detection for rate calculation")
@@ -214,6 +257,7 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     returnDict['rate']=rate
     returnDict['waitingTimes'] = waiting_times
     returnDict['numEvents'] = len(step_indices)
+    returnDict['temperature [K]'] = latin_hypercube_sample["appliedTemperature"]
     returnDict['inverseTemperature'] = invTemp
     returnDict['time [s]'] = time_s
     
@@ -242,6 +286,7 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     # returnDict['B1e_SI'] = latin_hypercube_sample["B1e_SI"]
     returnDict['B0s_SI'] = latin_hypercube_sample["B0s_SI"]
     # returnDict['B1s_SI'] = latin_hypercube_sample["B1s_SI"]
+    returnDict['measuredSeparation']= separation_measured
 
     # Save the returnDict to a text file in the figure_dir
     figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","simulation_results")

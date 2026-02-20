@@ -11,11 +11,11 @@
 #SBATCH --mail-type=FAIL,END     # Only mail on failure (success handled below)
 
 # ----------- Variables -----------
-SANDBOXDIR="/scratch/${USER}/DDD/github/Palmetto-Apptainer-Builds/DDD/archDDD.sandbox"
+SANDBOXDIR="/home/${USER}/github/Palmetto-Apptainer-Builds/DDD/archDDD.sandbox"
 SCRIPT_PY="parallel_run.py"
-JOB_BUILDDIR="/scratch/lmyhill/DDD/MoDELib2/build_${SLURM_JOB_ID}"
+JOB_BUILDDIR="/scratch/lmyhill/DDD/MoDELib2-lmyhill/build_${SLURM_JOB_ID}"
 VELOCITY_PROJECTION="X"   # Options: X, Y, Z
-SRC_FILE="/scratch/lmyhill/DDD/MoDELib2/src/DislocationDynamics/DislocationNode.cpp"
+SRC_FILE="/root/MoDELib2-lmyhill/src/DislocationDynamics/DislocationNode.cpp"
 
 # Optional: If script relies on current working directory
 WORKDIR="$SLURM_SUBMIT_DIR"
