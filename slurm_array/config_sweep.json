@@ -130,9 +130,9 @@
             ]
         ],
         "boxScaling": [
-            95,
-            155,
-            60
+            59,
+            120,
+            61
         ],
         "X0": [
             0,
@@ -178,10 +178,15 @@
             10,
             10
         ],
+        "dipoleHeights": [
+            17,
+            17
+        ],
         "glideSteps": [
             5,
             10
         ]
+        
     },
     "numberOfSimulations": 15,
     "outputSettings": {

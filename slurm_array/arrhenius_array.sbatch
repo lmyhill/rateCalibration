@@ -44,5 +44,5 @@ apptainer exec \
     --fakeroot \
     --bind $BIND_PATHS \
     "$SANDBOXDIR" \
-    python compute_crss.py
+    python arrhenius_rate.py
 
