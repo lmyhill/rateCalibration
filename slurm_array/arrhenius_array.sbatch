@@ -46,5 +46,5 @@ apptainer exec \
     --fakeroot \
     --bind $BIND_PATHS \
     "$SANDBOXDIR" \
-    python arrhenius_rate.py --config "$CONFIG_PATH"
+    python arrhenius_rate.py --config "$CONFIG_PATH" --row "$SLURM_ARRAY_TASK_ID"
 
