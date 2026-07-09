@@ -26,6 +26,8 @@ BUILD_DIR=$(cat latest_build_dir.txt)
 echo "Using build:"
 echo "$BUILD_DIR"
 
+export CONFIG_PATH="${WORKDIR}/config_sweep.json"
+
 # ----------------------------------------
 # Pass runtime variables to Python
 # ----------------------------------------
@@ -44,5 +46,5 @@ apptainer exec \
     --fakeroot \
     --bind $BIND_PATHS \
     "$SANDBOXDIR" \
-    python arrhenius_rate.py
+    python arrhenius_rate.py --config "$CONFIG_PATH"
 

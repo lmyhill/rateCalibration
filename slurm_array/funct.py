@@ -8,7 +8,7 @@ import shutil
 import pandas as pd
 import argparse
 
-config_path = "config.json"
+config_path = os.environ.get("CONFIG_PATH", "config_sweep.json")
 if not os.path.exists(config_path):
     print(f"Error: {config_path} not found.")
     sys.exit(1)
