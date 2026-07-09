@@ -22,7 +22,7 @@
     },
     "samplingSettings": {
         "method": "uniform",
-        "inputFile": "theta_samples.csv"
+        "inputFile": "theta_samples_generated.csv"
     },
     "inputMetrics": {
         "B0e_SI": {
