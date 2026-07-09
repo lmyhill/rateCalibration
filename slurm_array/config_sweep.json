@@ -92,6 +92,7 @@
         "atomsPerUnitCell": "1",
         "dislocationMobilityType": "FCC",
         "rho": "8940",
+        "mu_0": "48e9",
         "mu_1": "0",
         "b_SI": "0.2556e-9",
         "B0e_SI": "0.000099999",
