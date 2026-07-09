@@ -13,8 +13,6 @@ SANDBOXDIR="/home/${USER}/github/Palmetto-Apptainer-Builds/DDD/archDDD.sandbox"
 
 WORKDIR="$SLURM_SUBMIT_DIR"
 
-CONTAINER_WORKDIR="/workspace"
-
 BIND_PATHS="/scratch"
 
 cd "$WORKDIR" || exit 1
@@ -28,7 +26,7 @@ BUILD_DIR=$(cat latest_build_dir.txt)
 echo "Using build:"
 echo "$BUILD_DIR"
 
-export CONFIG_PATH="${CONTAINER_WORKDIR}/config_sweep.json"
+export CONFIG_PATH="${WORKDIR}/config_sweep.json"
 
 # ----------------------------------------
 # Pass runtime variables to Python
@@ -46,9 +44,8 @@ mkdir -p "$OUTPUT_DIR"
 apptainer exec \
     --writable \
     --fakeroot \
-    --bind "$WORKDIR:$CONTAINER_WORKDIR" \
     --bind "$BIND_PATHS" \
     --env CONFIG_PATH="$CONFIG_PATH" \
     "$SANDBOXDIR" \
-    bash -lc "cd '$CONTAINER_WORKDIR' && python arrhenius_rate.py --config '$CONFIG_PATH' --row '$SLURM_ARRAY_TASK_ID'"
+    bash -lc "cd '$WORKDIR' && python arrhenius_rate.py --config '$CONFIG_PATH' --row '$SLURM_ARRAY_TASK_ID'"
 
