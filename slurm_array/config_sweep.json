@@ -189,11 +189,28 @@
         
     },
     "numberOfSimulations": 15,
+    "step_detection_settings": {
+        "detectionMethod": "custom",
+        "autoStepFinderPath":"/Users/liammyhill/Desktop/code/jacobkers-Loeff-Kerssemakers-et-al-AutoStepFinder-206822b/python",
+        "step_height" : 0.0085,
+        "tolerance" : 0.002,
+        "start_value" : 0.001
+    },
     "outputSettings": {
         "outputPath": "/scratch/lmyhill/DDD/buildContainerResults/rateCalibration/10node_dt005_0",
-        "outputFiles": {
-            "crss_pa_results": "crss_pa_results.csv",
-            "simulation_log": "simulation_log.txt"
-        }
+        "copy_config": true,
+        "outputHypercube": true,
+        "outputHypercubeFileName": "prePopulatedHypercube",
+        "outputHypercubeFormat": "txt",
+        "outputIndividualSimulationDictionaries":true,
+        "singleSimulationDictionaryFormat": "txt",
+        "outputInputFilesDirectory": true,
+        "outputEVL":false,
+        "outputF": true,
+        "outputStepFitPlots": true,
+        "outputResultsFileName": "filledHypercube",
+        "outputResultsFormat": "txt",
+        "output_betaP_figure": true,
+        "output_dotBetaP_figure": true
     }
 }
