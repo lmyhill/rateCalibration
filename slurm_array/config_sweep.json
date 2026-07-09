@@ -7,6 +7,8 @@
 
     "modelPythonPath": "/root/MoDELib2-lmyhill/python",
 
+    "run_arrhenius_simulation": true,
+
     "application_domain":{
         "appliedStress": {
             "stress_component":3,
