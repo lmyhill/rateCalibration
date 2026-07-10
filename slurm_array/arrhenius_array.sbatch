@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=rate_array
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=32
 #SBATCH --mem=4gb
 #SBATCH --time=72:00:00
 #SBATCH --array=0-14

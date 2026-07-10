@@ -5,11 +5,12 @@
 
     "modelLibraryPath": "/root/MoDELib2-lmyhill/build/tools/pyMoDELib",
 
+    "library_driven": false,
+
     "modelPythonPath": "/root/MoDELib2-lmyhill/python",
 
     "run_arrhenius_simulation": true,
 
-    
     "application_domain": {
         "appliedStress": {
             "sample": true,

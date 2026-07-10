@@ -127,7 +127,7 @@ def main():
     polycrystal_settings = config["polycrystal_settings"]
     microstructure_settings = config["microstructure_settings"]
 
-    library_driven = config.get("library_driven", True)
+    library_driven = config.get("library_driven", False)
 
     detection_method = config.get(
         "detectionMethod",
