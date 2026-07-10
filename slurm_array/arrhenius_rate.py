@@ -30,6 +30,23 @@ def resolve_tutorial_root(ufl_path):
 
     return normalized_path
 
+
+def resolve_build_dir(config):
+    submit_dir = os.environ.get("SLURM_SUBMIT_DIR", os.getcwd())
+    build_dir_file = os.path.join(submit_dir, "latest_build_dir.txt")
+
+    if os.path.exists(build_dir_file):
+        with open(build_dir_file, "r") as f:
+            build_dir = f.read().strip()
+        if build_dir:
+            return build_dir
+
+    build_dir = os.environ.get("BUILD_DIR")
+    if build_dir:
+        return build_dir
+
+    return config.get("build_dir", False)
+
 def extract_sample_parameters(config):
     """
     Extract parameters marked for LHS sampling.
@@ -146,10 +163,7 @@ def main():
         }
     )
 
-    build_dir = config.get(
-        "build_dir",
-        False
-    )
+    build_dir = resolve_build_dir(config)
 
     stress_component = config["application_domain"]["appliedStress"].get(
         "stress_component",
