@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import argparse
+import shutil
 import pandas as pd
 import numpy as np
 
@@ -16,6 +17,18 @@ def json_default(value):
     if isinstance(value, (np.integer, np.floating)):
         return value.item()
     return str(value)
+
+
+def resolve_tutorial_root(ufl_path):
+    normalized_path = os.path.normpath(ufl_path)
+    if os.path.basename(normalized_path) == "tutorials":
+        return normalized_path
+
+    candidate = os.path.join(normalized_path, "tutorials")
+    if os.path.isdir(candidate):
+        return candidate
+
+    return normalized_path
 
 
 def main():
@@ -44,7 +57,7 @@ def main():
 
     row = args.row
 
-    ufl_base_directory = config["ufl"]
+    ufl_base_directory = resolve_tutorial_root(config["ufl"])
 
     output_settings = config["outputSettings"]
 
@@ -138,6 +151,16 @@ def main():
         "outputs"
     )
 
+    simulation_run_directory = os.path.join(
+        ufl_base_directory,
+        f"row_{row}_job_{slurm_job_id}"
+    )
+
+    if os.path.exists(simulation_run_directory):
+        shutil.rmtree(simulation_run_directory)
+
+    os.makedirs(simulation_run_directory, exist_ok=True)
+
     run_directory = os.path.join(
         output_root,
         f"row_{row}_job_{slurm_job_id}"
@@ -145,12 +168,11 @@ def main():
 
     os.makedirs(run_directory, exist_ok=True)
 
-    #
     output_settings["outputPath"] = run_directory
 
     print(
         f"Running row {row} "
-        f"in {ufl_base_directory}"
+        f"in {simulation_run_directory}"
     )
 
     # ----------------------------------------------------------
@@ -160,7 +182,7 @@ def main():
     results = run_arrhenius_simulation(
         latin_hypercube_sample=latin_hypercube_sample,
         stress_component=stress_component,
-        ufl=ufl_base_directory,
+        ufl=simulation_run_directory,
         DD_settings=DD_settings,
         noise_settings=noise_settings,
         material_settings=material_settings,
