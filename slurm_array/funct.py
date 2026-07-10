@@ -26,11 +26,13 @@ with open(config_path, "r") as config_file:
         from modlibUtils import *
 
 #define a function to run the langevin thermostat simulation and extract the rate
-def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False,crss_settings=False):
+def run_arrhenius_simulation(application_domain,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False,crss_settings=False):
     
     returnDict = {}
     
-    stress=latin_hypercube_sample["appliedStress"]
+    stress=application_domain["appliedStress"]
+
+    stress_component=application_domain["appliedStress"].get("stress_component",3)
     
     formattedStress=formatStress(stress_component,stress/float(material_settings["mu_0"]))
     
@@ -68,7 +70,7 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
                 DD_settings["periodic_image_size"],
                 DD_settings["EwaldLengthFactor"],
                 DD_settings["coreSize"],
-                latin_hypercube_sample["alphaLineTension"],
+                DD_settings["alphaLineTension"],
                 DD_settings["remeshFrequency"],
                 DD_settings["timeSteppingMethod"],
                 DD_settings["dtMax"],
@@ -90,9 +92,9 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
                       material_settings["glidePlaneNoise"],
                       material_settings["atomsPerUnitCell"],
                       material_settings["dislocationMobilityType"],
-                      latin_hypercube_sample["B0e_SI"],
+                      material_settings["B0e_SI"],
                       material_settings["B1e_SI"],
-                      latin_hypercube_sample["B0s_SI"],
+                      material_settings["B0s_SI"],
                       material_settings["B1s_SI"],
                       material_settings["rho"],
                       material_settings["mu_0"],

@@ -9,42 +9,33 @@
 
     "run_arrhenius_simulation": true,
 
-    "application_domain":{
+    
+    "application_domain": {
         "appliedStress": {
-            "stress_component":3,
+            "sample": true,
             "min_value": 40e6,
-            "max_value": 80e6 
+            "max_value": 80e6,
+            "stress_component": 3
         },
         "appliedTemperature": {
-            "min_value":  500,
+            "sample": true,
+            "min_value": 500,
             "max_value": 800
         }
     },
+
     "samplingSettings": {
         "method": "uniform",
         "inputFile": "theta_samples_generated.csv"
     },
-    "inputMetrics": {
-        "B0e_SI": {
-            "min_value": 9e-7,
-            "max_value": 9e-4 
 
-        },
-        "B0s_SI": {
-            "min_value": 9e-7,
-            "max_value": 9e-4 
-        },
-        "alphaLineTension": {
-            "min_value":  0.5,
-            "max_value": 5.0
-        }
-    },
     "DD_settings": {
         "useFEM": "0",
         "useDislocations": "1",
         "useInclusions": "0",
         "useElasticDeformation": "1",
         "useClusterDynamics": "0",
+        "coreSize": "2.0",
         "quadPerLength": "1",
         "periodic_image_size": "8 8 8",
         "EwaldLengthFactor": "8.0",
@@ -52,7 +43,14 @@
         "timeSteppingMethod": "fixed",
         "dtMax": "1",
         "dxMax": "0.5",
-        "alphaLineTension": "0.5",
+
+        "alphaLineTension": {
+            "sample": true,
+            "min_value": 0.5,
+            "max_value": 5.0,
+            "value": "0.5"
+        },
+
         "maxJunctionIterations": "0",
         "use_velocityFilter": "0",
         "use_stochasticForce": "0",
@@ -65,6 +63,7 @@
         "climbSolverType": "none",
         "Nsteps": "9000"
     },
+
     "noise_settings": {
         "noiseFile": "",
         "type": "",
@@ -84,6 +83,7 @@
         ],
         "a_cai_SI": "5.59e-10"
     },
+
     "material_settings": {
         "materialFile": "Cu_old.txt",
         "enabledSlipSystems": "Shockley",
@@ -95,14 +95,30 @@
         "mu_0": "48e9",
         "mu_1": "0",
         "b_SI": "0.2556e-9",
-        "B0e_SI": "0.000099999",
+
+        "B0e_SI": {
+            "sample": true,
+            "min_value": 9e-7,
+            "max_value": 9e-4,
+            "value": "0.000099999"
+        },
+
         "B1e_SI": "0.0",
-        "B0s_SI": "0.000099999",
+
+        "B0s_SI": {
+            "sample": true,
+            "min_value": 9e-7,
+            "max_value": 9e-4,
+            "value": "0.000099999"
+        },
+
         "B1s_SI": "0.0"
     },
+
     "elasticDeformation_settings": {
         "elasticDeformationFile": "ElasticDeformation.txt"
     },
+
     "polycrystal_settings": {
         "meshFile": "unitCube24.msh",
         "grain1globalX1": [
@@ -155,6 +171,7 @@
         ],
         "applied_temperature": "300"
     },
+
     "microstructure_settings": {
         "microstructureFile1": "periodicDipoleIndividual.txt",
         "slipSystemIDs": [
@@ -189,8 +206,8 @@
             5,
             10
         ]
-        
-    },
+    }
+    
     "numberOfSimulations": 15,
     "step_detection_settings": {
         "detectionMethod": "custom",

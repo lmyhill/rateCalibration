@@ -30,6 +30,65 @@ def resolve_tutorial_root(ufl_path):
 
     return normalized_path
 
+def extract_sample_parameters(config):
+    """
+    Extract parameters marked for LHS sampling.
+
+    Returns:
+        dict:
+            {
+                parameter_name: {
+                    min_value: ...,
+                    max_value: ...
+                }
+            }
+    """
+
+    sampled_parameters = {}
+
+    def recurse(settings):
+        for key, value in settings.items():
+
+            if isinstance(value, dict):
+
+                if value.get("sample", False):
+                    sampled_parameters[key] = {
+                        "min_value": value["min_value"],
+                        "max_value": value["max_value"]
+                    }
+
+                else:
+                    recurse(value)
+
+    recurse(config)
+
+    return sampled_parameters
+
+def resolve_settings(settings, sample):
+    """
+    Replace sampled parameters with LHS values.
+    """
+
+    resolved = {}
+
+    for key, value in settings.items():
+
+        if isinstance(value, dict):
+
+            if value.get("sample", False):
+
+                resolved[key] = sample[key]
+
+            else:
+                resolved[key] = resolve_settings(
+                    value,
+                    sample
+                )
+
+        else:
+            resolved[key] = value
+
+    return resolved
 
 def main():
 
@@ -92,7 +151,7 @@ def main():
         False
     )
 
-    stress_component = config.get(
+    stress_component = config["application_domain"]["appliedStress"].get(
         "stress_component",
         3
     )
@@ -115,11 +174,44 @@ def main():
             f"Requested row {row}, but sample file only "
             f"contains {len(df)} rows."
         )
+    
+    resolved_DD_settings = resolve_settings(
+        DD_settings,
+        latin_hypercube_sample
+    )
 
-    latin_hypercube_sample = (
+    resolved_material_settings = resolve_settings(
+        material_settings,
+        latin_hypercube_sample
+    )
+
+    resolved_application_domain = resolve_settings(
+        config["application_domain"],
+        latin_hypercube_sample
+    )
+
+    raw_sample = (
         df.iloc[row]
         .to_dict()
     )
+
+
+    sampling_parameters = extract_sample_parameters(config)
+
+
+    latin_hypercube_sample = {}
+
+    for parameter in sampling_parameters:
+
+        if parameter not in raw_sample:
+            raise KeyError(
+                f"Sample parameter '{parameter}' "
+                "missing from CSV"
+            )
+
+        latin_hypercube_sample[parameter] = (
+            raw_sample[parameter]
+        )
 
     # ----------------------------------------------------------
     # Determine seed
@@ -180,24 +272,23 @@ def main():
     # ----------------------------------------------------------
 
     results = run_arrhenius_simulation(
-        latin_hypercube_sample=latin_hypercube_sample,
-        stress_component=stress_component,
-        ufl=simulation_run_directory,
-        DD_settings=DD_settings,
-        noise_settings=noise_settings,
-        material_settings=material_settings,
-        elasticDeformation_settings=elasticDeformation_settings,
-        polycrystal_settings=polycrystal_settings,
-        microstructure_settings=microstructure_settings,
-        output_settings=output_settings,
-        row=row,
-        seed=seed,
-        detectionMethod=detection_method,
-        step_detction_settings=step_detection_settings,
-        library_driven=library_driven,
-        build_dir=build_dir,
-        crss_settings=crss_settings
-    )
+    application_domain=resolved_application_domain,
+    ufl=simulation_run_directory,
+    DD_settings=resolved_DD_settings,
+    noise_settings=noise_settings,
+    material_settings=resolved_material_settings,
+    elasticDeformation_settings=elasticDeformation_settings,
+    polycrystal_settings=polycrystal_settings,
+    microstructure_settings=microstructure_settings,
+    output_settings=output_settings,
+    row=row,
+    seed=seed,
+    detectionMethod=detection_method,
+    step_detction_settings=step_detection_settings,
+    library_driven=library_driven,
+    build_dir=build_dir,
+    crss_settings=crss_settings
+)
 
     # ----------------------------------------------------------
     # Save raw simulation results for post-processing
