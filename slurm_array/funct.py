@@ -32,7 +32,7 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     
     stress=latin_hypercube_sample["appliedStress"]
     
-    formattedStress=formatStress(stress_component,stress/material_settings["mu_0"])
+    formattedStress=formatStress(stress_component,stress/float(material_settings["mu_0"]))
     
     os.chdir(ufl)
     
@@ -289,21 +289,6 @@ def run_arrhenius_simulation(latin_hypercube_sample,stress_component,ufl,DD_sett
     # returnDict['B1s_SI'] = latin_hypercube_sample["B1s_SI"]
     returnDict['measuredSeparation']= separation_measured
 
-    # Save the returnDict to a text file in the figure_dir
-    figure_dir = os.path.join(output_settings["outputPath"],f"row_{row}",f"seed_{seed}","simulation_results")
-    os.makedirs(figure_dir, exist_ok=True)
-    output_file = os.path.join(figure_dir, f"results_seed_{seed}_row_{row}.txt")
-    with open(output_file, "w") as f:
-        for key, value in returnDict.items():
-            f.write(f"{key}: {value}\n")
-        
-    # print("returnDict Written")
-    # # Print the returnDict for debugging
-    # print("Return Dictionary:")
-    # for key, value in returnDict.items():
-    #     print(f"{key}: {value}")
-    
-    
     return(returnDict)
 
 #define a function to write the input settings of DD.txt

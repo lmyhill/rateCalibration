@@ -6,8 +6,29 @@ import json
 import argparse
 import shutil
 import pandas as pd
+import numpy as np
 
 from funct import run_arrhenius_simulation
+
+
+def json_default(value):
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    if isinstance(value, (np.integer, np.floating)):
+        return value.item()
+    return str(value)
+
+
+def resolve_tutorial_source(ufl_path):
+    normalized_path = os.path.normpath(ufl_path)
+    if os.path.basename(normalized_path) == "tutorials":
+        return normalized_path
+
+    candidate = os.path.join(normalized_path, "tutorials")
+    if os.path.isdir(candidate):
+        return candidate
+
+    return normalized_path
 
 
 def main():
@@ -112,7 +133,7 @@ def main():
     seed = 1
 
     # ----------------------------------------------------------
-    # Create isolated run directory
+    # Create isolated run directory under the submission outputs
     # ----------------------------------------------------------
 
     slurm_job_id = os.environ.get(
@@ -120,28 +141,40 @@ def main():
         "local"
     )
 
+    slurm_submit_dir = os.environ.get(
+        "SLURM_SUBMIT_DIR",
+        os.getcwd()
+    )
+
+    output_root = os.path.join(
+        slurm_submit_dir,
+        "outputs"
+    )
+
     run_directory = os.path.join(
-        output_settings["outputPath"],
+        output_root,
         f"row_{row}_job_{slurm_job_id}"
     )
 
     os.makedirs(run_directory, exist_ok=True)
 
     #
-    # Copy tutorial files into a unique workspace.
+    # Copy tutorial files into a unique workspace inside outputs.
     #
     tutorial_directory = os.path.join(
         run_directory,
-        "tutorial"
+        "tutorials"
     )
 
     if os.path.exists(tutorial_directory):
         shutil.rmtree(tutorial_directory)
 
     shutil.copytree(
-        ufl_base_directory,
+        resolve_tutorial_source(ufl_base_directory),
         tutorial_directory
     )
+
+    output_settings["outputPath"] = run_directory
 
     print(
         f"Running row {row} "
@@ -173,12 +206,21 @@ def main():
     )
 
     # ----------------------------------------------------------
-    # Save results
+    # Save raw simulation results for post-processing
     # ----------------------------------------------------------
 
-    results_file = os.path.join(
+    results_dir = os.path.join(
         run_directory,
-        "results.json"
+        f"row_{row}",
+        f"seed_{seed}",
+        "simulation_results"
+    )
+
+    os.makedirs(results_dir, exist_ok=True)
+
+    results_file = os.path.join(
+        results_dir,
+        "raw_results.json"
     )
 
     with open(results_file, "w") as f:
@@ -186,11 +228,11 @@ def main():
             results,
             f,
             indent=4,
-            default=str
+            default=json_default
         )
 
     print(
-        f"Completed row {row}"
+        f"Completed row {row}; raw results saved to {results_file}"
     )
 
     return
