@@ -273,6 +273,7 @@ def main():
 
     results = run_arrhenius_simulation(
         application_domain=resolved_application_domain,
+        stress_component=stress_component,
         sampled_parameters=latin_hypercube_sample,
         ufl=simulation_run_directory,
         DD_settings=resolved_DD_settings,

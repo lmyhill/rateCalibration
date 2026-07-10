@@ -26,13 +26,18 @@ with open(config_path, "r") as config_file:
         from modlibUtils import *
 
 #define a function to run the langevin thermostat simulation and extract the rate
-def run_arrhenius_simulation(application_domain,sampled_parameters,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False,crss_settings=False):
+def run_arrhenius_simulation(application_domain,stress_component,sampled_parameters,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False,crss_settings=False):
     
     returnDict = {}
     
-    stress=application_domain["appliedStress"]
+    if isinstance(application_domain, dict):
+        stress = application_domain.get("appliedStress", application_domain)
+        if isinstance(stress, dict):
+            stress = stress.get("value", stress.get("min_value", stress.get("max_value")))
+    else:
+        stress = application_domain
 
-    stress_component=application_domain["appliedStress"].get("stress_component",3)
+    stress_component = int(stress_component)
     
     formattedStress=formatStress(stress_component,stress/float(material_settings["mu_0"]))
     
