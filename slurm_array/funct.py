@@ -26,7 +26,7 @@ with open(config_path, "r") as config_file:
         from modlibUtils import *
 
 #define a function to run the langevin thermostat simulation and extract the rate
-def run_arrhenius_simulation(application_domain,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False,crss_settings=False):
+def run_arrhenius_simulation(application_domain,sampled_parameters,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,output_settings,row,seed,detectionMethod,step_detction_settings,library_driven=True,build_dir=False,crss_settings=False):
     
     returnDict = {}
     
@@ -103,7 +103,7 @@ def run_arrhenius_simulation(application_domain,ufl,DD_settings,noise_settings,m
     
     writePolyCrystalFile(polycrystal_settings["meshFile"],
                          material_settings["materialFile"],
-                         latin_hypercube_sample["appliedTemperature"],
+                         sampled_parameters.get("appliedTemperature", polycrystal_settings.get("applied_temperature")),
                          np.array(polycrystal_settings["grain1globalX1"]),
                          np.array(polycrystal_settings["grain1globalX3"]),
                          np.array(polycrystal_settings["boxEdges"]),
@@ -248,19 +248,19 @@ def run_arrhenius_simulation(application_domain,ufl,DD_settings,noise_settings,m
             print("No waiting times detected, setting rate to NaN")
             rate = np.nan
         compute_psd(ufl,os.path.join(psd_figure_dir,f"row_{row}",f"seed_{seed}","psd"))
-        temperature=latin_hypercube_sample["appliedTemperature"]
+        temperature=sampled_parameters.get("appliedTemperature", polycrystal_settings.get("applied_temperature"))
         invTemp=1/(temperature)
 
     if crss_settings["compute_crss"]:
         # Compute the CRSS based on the current simulation parameters
-        crss = compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,output_settings,row,seed,build_dir)
+        crss = compute_crss(sampled_parameters,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,output_settings,row,seed,build_dir)
         returnDict['CRSS'] = crss
 
     #Extract the quantities related to the rate from the simulation
     returnDict['rate']=rate
     returnDict['waitingTimes'] = waiting_times
     returnDict['numEvents'] = len(step_indices)
-    returnDict['temperature [K]'] = latin_hypercube_sample["appliedTemperature"]
+    returnDict['temperature [K]'] = sampled_parameters.get("appliedTemperature", polycrystal_settings.get("applied_temperature"))
     returnDict['inverseTemperature'] = invTemp
     returnDict['time [s]'] = time_s
     
@@ -283,11 +283,11 @@ def run_arrhenius_simulation(application_domain,ufl,DD_settings,noise_settings,m
     returnDict['nodesPerLine'] = nodesPerLine
     returnDict['glideSteps'] = glideSteps
     returnDict['coreSize'] = DD_settings["coreSize"]
-    returnDict['alphaLineTension'] = latin_hypercube_sample["alphaLineTension"]
+    returnDict['alphaLineTension'] = sampled_parameters.get("alphaLineTension", DD_settings.get("alphaLineTension"))
     returnDict['seed'] = seed
-    returnDict['B0e_SI'] = latin_hypercube_sample["B0e_SI"]
+    returnDict['B0e_SI'] = sampled_parameters.get("B0e_SI", material_settings.get("B0e_SI"))
     # returnDict['B1e_SI'] = latin_hypercube_sample["B1e_SI"]
-    returnDict['B0s_SI'] = latin_hypercube_sample["B0s_SI"]
+    returnDict['B0s_SI'] = sampled_parameters.get("B0s_SI", material_settings.get("B0s_SI"))
     # returnDict['B1s_SI'] = latin_hypercube_sample["B1s_SI"]
     returnDict['measuredSeparation']= separation_measured
 
@@ -576,7 +576,7 @@ def compute_rate(waiting_times):
     return 1.0 / np.mean(waiting_times)
 
 
-def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,crss_fig_dir,row,seed,build_dir):
+def compute_crss(sampled_parameters,stress_component,ufl,DD_settings,noise_settings,material_settings,elasticDeformation_settings,polycrystal_settings,microstructure_settings,crss_settings,crss_fig_dir,row,seed,build_dir):
     """
     Compute the Critical Resolved Shear Stress (CRSS) based on the current simulation parameters.
 
@@ -626,9 +626,9 @@ def compute_crss(latin_hypercube_sample,stress_component,ufl,DD_settings,noise_s
 
         writeElasticDeformationFile(elasticDeformation_settings["elasticDeformationFile"],stress_states[count])
         writeDipoleMicrostructureFile(microstructure_settings["microstructureFile1"],microstructure_settings["slipSystemIDs"],microstructure_settings["exitFaceIDs"],microstructure_settings["dipoleCenters"],microstructure_settings["nodesPerLine"],microstructure_settings["dipoleHeights"],microstructure_settings["glideSteps"])
-        writeDDfile(DD_settings["useFEM"],DD_settings["useDislocations"],DD_settings["useInclusions"],DD_settings["useElasticDeformation"],DD_settings["useClusterDynamics"],DD_settings["quadPerLength"],DD_settings["periodic_image_size"],DD_settings["EwaldLengthFactor"],latin_hypercube_sample["coreSize"],latin_hypercube_sample["alphaLineTension"],DD_settings["remeshFrequency"],DD_settings["timeSteppingMethod"],DD_settings["dtMax"],DD_settings["dxMax"],DD_settings["maxJunctionIterations"],DD_settings["use_velocityFilter"],'0','0',DD_settings["Lmin"],DD_settings["Lmax"],DD_settings["outputFrequency"],DD_settings["outputQuadraturePoints"],DD_settings["glideSolverType"],DD_settings["climbSolverType"],int(DD_settings['Nsteps']))
+        writeDDfile(DD_settings["useFEM"],DD_settings["useDislocations"],DD_settings["useInclusions"],DD_settings["useElasticDeformation"],DD_settings["useClusterDynamics"],DD_settings["quadPerLength"],DD_settings["periodic_image_size"],DD_settings["EwaldLengthFactor"],sampled_parameters.get("coreSize", DD_settings.get("coreSize")),sampled_parameters.get("alphaLineTension", DD_settings.get("alphaLineTension")),DD_settings["remeshFrequency"],DD_settings["timeSteppingMethod"],DD_settings["dtMax"],DD_settings["dxMax"],DD_settings["maxJunctionIterations"],DD_settings["use_velocityFilter"],'0','0',DD_settings["Lmin"],DD_settings["Lmax"],DD_settings["outputFrequency"],DD_settings["outputQuadraturePoints"],DD_settings["glideSolverType"],DD_settings["climbSolverType"],int(DD_settings['Nsteps']))
         writeMaterialFile(material_settings["materialFile"],material_settings["enabledSlipSystems"],material_settings["glidePlaneNoise"],material_settings["atomsPerUnitCell"],material_settings["dislocationMobilityType"],material_settings["B0e_SI"],material_settings["B1e_SI"],material_settings["B0s_SI"],material_settings["B1s_SI"],material_settings["rho"],material_settings["mu_0"],material_settings["mu_1"],material_settings["nu"])
-        writePolyCrystalFile(polycrystal_settings["meshFile"],material_settings["materialFile"],latin_hypercube_sample["appliedTemperature"],np.array(polycrystal_settings["grain1globalX1"]),np.array(polycrystal_settings["grain1globalX3"]),np.array(polycrystal_settings["boxEdges"]),np.array(polycrystal_settings["boxScaling"]),np.array(polycrystal_settings["X0"]),np.array(polycrystal_settings["periodicFaceIDs"]),np.array(polycrystal_settings["gridSize_poly"]),np.array(polycrystal_settings["gridSpacing_SI_poly"]))
+        writePolyCrystalFile(polycrystal_settings["meshFile"],material_settings["materialFile"],sampled_parameters.get("appliedTemperature", polycrystal_settings.get("applied_temperature")),np.array(polycrystal_settings["grain1globalX1"]),np.array(polycrystal_settings["grain1globalX3"]),np.array(polycrystal_settings["boxEdges"]),np.array(polycrystal_settings["boxScaling"]),np.array(polycrystal_settings["X0"]),np.array(polycrystal_settings["periodicFaceIDs"]),np.array(polycrystal_settings["gridSize_poly"]),np.array(polycrystal_settings["gridSpacing_SI_poly"]))
         writeNoiseFile(noise_settings["noiseFile"],noise_settings["type"],'0',noise_settings["seed"],noise_settings["correlationFile_L"],noise_settings["correlationFile_T"],noise_settings["gridSize"],noise_settings["gridSpacing_SI"],noise_settings["a_cai_SI"])
 
         

@@ -22,4 +22,4 @@ apptainer exec \
     --bind "$BIND_PATHS" \
     --env CONFIG_PATH="$CONFIG_PATH" \
     "$SANDBOXDIR" \
-    bash -lc "cd '$WORKDIR' && python post_process.py --config '$CONFIG_PATH' --output-root '$OUTPUT_ROOT'"
+    bash -lc "cd '$WORKDIR' && python3 post_process.py --config '$CONFIG_PATH' --output-root '$OUTPUT_ROOT'"

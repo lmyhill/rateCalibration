@@ -206,8 +206,7 @@
             5,
             10
         ]
-    }
-    
+    },
     "numberOfSimulations": 15,
     "step_detection_settings": {
         "detectionMethod": "custom",
