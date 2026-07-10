@@ -4,7 +4,6 @@ import os
 import sys
 import json
 import argparse
-import shutil
 import pandas as pd
 import numpy as np
 
@@ -17,18 +16,6 @@ def json_default(value):
     if isinstance(value, (np.integer, np.floating)):
         return value.item()
     return str(value)
-
-
-def resolve_tutorial_source(ufl_path):
-    normalized_path = os.path.normpath(ufl_path)
-    if os.path.basename(normalized_path) == "tutorials":
-        return normalized_path
-
-    candidate = os.path.join(normalized_path, "tutorials")
-    if os.path.isdir(candidate):
-        return candidate
-
-    return normalized_path
 
 
 def main():
@@ -159,26 +146,11 @@ def main():
     os.makedirs(run_directory, exist_ok=True)
 
     #
-    # Copy tutorial files into a unique workspace inside outputs.
-    #
-    tutorial_directory = os.path.join(
-        run_directory,
-        "tutorials"
-    )
-
-    if os.path.exists(tutorial_directory):
-        shutil.rmtree(tutorial_directory)
-
-    shutil.copytree(
-        resolve_tutorial_source(ufl_base_directory),
-        tutorial_directory
-    )
-
     output_settings["outputPath"] = run_directory
 
     print(
         f"Running row {row} "
-        f"in {tutorial_directory}"
+        f"in {ufl_base_directory}"
     )
 
     # ----------------------------------------------------------
@@ -188,7 +160,7 @@ def main():
     results = run_arrhenius_simulation(
         latin_hypercube_sample=latin_hypercube_sample,
         stress_component=stress_component,
-        ufl=tutorial_directory,
+        ufl=ufl_base_directory,
         DD_settings=DD_settings,
         noise_settings=noise_settings,
         material_settings=material_settings,
