@@ -721,13 +721,17 @@ def compute_psd(ufl,savepath):
     # Rotation matrix from polycrystal.txt
     # ----------------------
     C2G1 = None
-    with open(os.path.join(ufl, 'inputFiles', 'polycrystal.txt'), 'r') as f:
+    with open(os.path.join(ufl, 'inputFiles', 'polycrystal.txt')) as f:
         for line in f:
-            if 'C2G1' in line:
-                C2G1 = np.fromstring(line.split('=')[1], sep=' ')
-                C2G1 = np.append(C2G1, np.fromstring(f.readline().strip(), sep=' '))
-                C2G1 = np.append(C2G1, np.fromstring(f.readline().strip(), sep=' '))
-                C2G1 = C2G1.reshape((3, 3))
+            if line.strip().startswith("C2G1"):
+                text = line.split("=", 1)[1]
+
+                while ";" not in text:
+                    text += " " + f.readline()
+
+                text = text.split(";", 1)[0]
+                values = np.fromstring(text, sep=' ')
+                C2G1 = values.reshape(3, 3)
                 break
 
     # ----------------------
