@@ -252,7 +252,6 @@ def run_arrhenius_simulation(application_domain,stress_component,sampled_paramet
         else:
             print("No waiting times detected, setting rate to NaN")
             rate = np.nan
-        compute_psd(ufl,os.path.join(psd_figure_dir,f"row_{row}",f"seed_{seed}","psd"))
         temperature=sampled_parameters.get("appliedTemperature", polycrystal_settings.get("applied_temperature"))
         invTemp=1/(temperature)
 
@@ -295,6 +294,12 @@ def run_arrhenius_simulation(application_domain,stress_component,sampled_paramet
     returnDict['B0s_SI'] = sampled_parameters.get("B0s_SI", material_settings.get("B0s_SI"))
     # returnDict['B1s_SI'] = latin_hypercube_sample["B1s_SI"]
     returnDict['measuredSeparation']= separation_measured
+
+    if detectionMethod == "custom":
+        try:
+            compute_psd(ufl, psd_figure_dir)
+        except Exception as exc:
+            print(f"Warning: PSD plotting failed for row {row}, seed {seed}: {exc}")
 
     return(returnDict)
 
@@ -701,6 +706,8 @@ def compute_crss(sampled_parameters,stress_component,ufl,DD_settings,noise_setti
 
 
 def compute_psd(ufl,savepath):
+
+    os.makedirs(savepath, exist_ok=True)
 
     # ----------------------
     # EVL Formatting
